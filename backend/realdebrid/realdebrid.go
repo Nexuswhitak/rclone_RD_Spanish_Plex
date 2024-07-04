@@ -104,7 +104,7 @@ func init() {
 			Name:     "regex_shows",
 			Help:     `please define the regex definition that will determine if a torrent should be classified as a show. Default: "(?i)(S[0-9]{2}|SEASON|COMPLETE|[^457a-z\W\s]-[0-9]+)"`,
 			Advanced: true,
-			Default:  `(?i)(S[0-9]{2}|SEASON|COMPLETE|[^457a-z\W\s]-[0-9]+)`,
+			Default:  `(?i)(S[0-9]{2}|SEASON|COMPLETE|[^457a-z\W\s]-[0-9]+|\d{1}[xX]\d{2}|\bCap\.\d{3,4}\b`,
 		}, {
 			Name:     "regex_movies",
 			Help:     `please define the regex definition that will determine if a torrent should be classified as a movie. Default: "(?i)(19|20)([0-9]{2} ?\.?)"`,
@@ -650,12 +650,21 @@ func (f *Fs) listAll(ctx context.Context, dirID string, directoriesOnly bool, fi
 				}
 			}
 		} else if f.opt.SharedFolder == "folders" && (dirID == "shows" || dirID == "movies" || dirID == "default") {
+			capRegex := regexp.MustCompile(`(?i)\bCap\.(\d{1,2})(\d{2})\b`) // RegEx para Cap.XYY o Cap.XXYY
 			var artificialType []api.Item
 			if dirID == "shows" {
-				r, _ := regexp.Compile(f.opt.RegexShows) //(?i)(S[0-9]{2}|SEASON|COMPLETE)
+				r, _ := regexp.Compile(f.opt.RegexShows) //(?i)(S[0-9]{2}|SEASON|COMPLETE|[^457a-z\W\s]-[0-9]+|\d{1}[xX]\d{2}|\bCap\.\d{3,4}\b)
 				for _, torrent := range torrents {
 					match := r.MatchString(torrent.Name)
 					if match {
+						// Modificar el nombre del torrent si cumple con el patrón Cap.XYY o Cap.XXYY
+						if capMatch := capRegex.FindStringSubmatch(torrent.Name); capMatch != nil {
+							if len(capMatch[1]) == 1 {
+								torrent.Name += fmt.Sprintf("s0%se%s", capMatch[1], capMatch[2])
+							} else {
+								torrent.Name += fmt.Sprintf("s%se%s", capMatch[1], capMatch[2])
+							}
+						}
 						artificialType = append(artificialType, torrent)
 					}
 				}
@@ -678,6 +687,14 @@ func (f *Fs) listAll(ctx context.Context, dirID string, directoriesOnly bool, fi
 					match := r.MatchString(torrent.Name)
 					exclude := nr.MatchString(torrent.Name)
 					if !match && !exclude {
+						// Modificar el nombre del torrent si cumple con el patrón Cap.XYY o Cap.XXYY
+						if capMatch := capRegex.FindStringSubmatch(torrent.Name); capMatch != nil {
+							if len(capMatch[1]) == 1 {
+								torrent.Name += fmt.Sprintf("s0%se%s", capMatch[1], capMatch[2])
+							} else {
+								torrent.Name += fmt.Sprintf("s%se%s", capMatch[1], capMatch[2])
+							}
+						}
 						artificialType = append(artificialType, torrent)
 					}
 				}
