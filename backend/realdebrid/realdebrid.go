@@ -659,20 +659,26 @@ func (f *Fs) listAll(ctx context.Context, dirID string, directoriesOnly bool, fi
 					if match {
 						// Encuentra la posición del último punto para separar el nombre de archivo y la extensión
 						lastDot := strings.LastIndex(torrent.Name, ".")
-						// Modificar el nombre del torrent si cumple con el patrón Cap.XYY o Cap.XXYY
-						if capMatch := capRegex.FindStringSubmatch(torrent.Name); capMatch != nil {
-							var newName string
-							if len(capMatch[1]) == 1 {
-								newName  += fmt.Sprintf("s0%se%s", torrent.Name[:lastDot], capMatch[1], capMatch[2])
-							} else {
-								newName  += fmt.Sprintf("s%se%s", torrent.Name[:lastDot], capMatch[1], capMatch[2])
-							}
-							// Concatena la extensión original al nuevo nombre
-							newName += torrent.Name[lastDot:]
 
-							// Asigna el nuevo nombre al torrent
-							torrent.Name = newName
+						if lastDot == -1 {
+							// Si no se encuentra un punto, el nombre completo se toma como el nombre del archivo
+							lastDot = len(torrent.Name)
 						}
+
+						// Obtiene el nombre del archivo sin la extensión y la extensión por separado
+						fileName := torrent.Name[:lastDot]
+						fileExt := torrent.Name[lastDot:]
+
+						if capMatch := capRegex.FindStringSubmatch(fileName); capMatch != nil {
+							var newName string
+								if len(capMatch[1]) == 1 {
+									newName  += fmt.Sprintf("s0%se%s", capMatch[1], capMatch[2], fileExt)
+								} else {
+									newName  += fmt.Sprintf("s%se%s", capMatch[1], capMatch[2], fileExt)
+								}
+
+								torrent.Name = newName
+							}
 						artificialType = append(artificialType, torrent)
 					}
 				}
@@ -697,20 +703,26 @@ func (f *Fs) listAll(ctx context.Context, dirID string, directoriesOnly bool, fi
 					if !match && !exclude {
 						// Encuentra la posición del último punto para separar el nombre de archivo y la extensión
 						lastDot := strings.LastIndex(torrent.Name, ".")
-						// Modificar el nombre del torrent si cumple con el patrón Cap.XYY o Cap.XXYY
-						if capMatch := capRegex.FindStringSubmatch(torrent.Name); capMatch != nil {
-							var newName string
-							if len(capMatch[1]) == 1 {
-								newName  += fmt.Sprintf("s0%se%s", torrent.Name[:lastDot], capMatch[1], capMatch[2])
-							} else {
-								newName  += fmt.Sprintf("s%se%s", torrent.Name[:lastDot], capMatch[1], capMatch[2])
-							}
-							// Concatena la extensión original al nuevo nombre
-							newName += torrent.Name[lastDot:]
 
-							// Asigna el nuevo nombre al torrent
-							torrent.Name = newName
+						if lastDot == -1 {
+							// Si no se encuentra un punto, el nombre completo se toma como el nombre del archivo
+							lastDot = len(torrent.Name)
 						}
+
+						// Obtiene el nombre del archivo sin la extensión y la extensión por separado
+						fileName := torrent.Name[:lastDot]
+						fileExt := torrent.Name[lastDot:]
+
+						if capMatch := capRegex.FindStringSubmatch(fileName); capMatch != nil {
+							var newName string
+								if len(capMatch[1]) == 1 {
+									newName  += fmt.Sprintf("s0%se%s", capMatch[1], capMatch[2], fileExt)
+								} else {
+									newName  += fmt.Sprintf("s%se%s", capMatch[1], capMatch[2], fileExt)
+								}
+								
+								torrent.Name = newName
+							}
 						artificialType = append(artificialType, torrent)
 					}
 				}
